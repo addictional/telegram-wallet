@@ -1,24 +1,24 @@
-from flask import Flask, send_from_directory,jsonify
-import os
+from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from pathlib import Path
+import uvicorn
 
-app = Flask(__name__,static_folder='../frontend/dist',static_url_path='/')
+app = FastAPI()
 
-# 🔗 Транзакции связаны с картами по полю card_id
+# Transaction data linked to cards by card_id
 transactions = [
     {"id": 1, "card_id": 1, "icon": "⬇️", "title": "Funding", "color": "text-green-600",
      "subtitle": "Bank Transfer", "amount": 90000, "currency": 'RUB'},
-
     {"id": 2, "card_id": 1, "icon": "🎮", "title": "Steam", "color": "text-red-500",
      "subtitle": "Payment", "amount": -50, "currency": 'USD'},
-
     {"id": 3, "card_id": 1, "icon": "🎁", "title": "Gift received", "color": "text-green-600",
      "subtitle": "From Dad", "amount": 30000, "currency": "RUB"},
-
     {"id": 4, "card_id": 2, "icon": "📦", "title": "AliExpress", "color": "text-red-500",
      "subtitle": "Order #456", "amount": -130, "currency": "USD"},
 ]
 
-# Пример: список карт
+# Example cards list
 cards = [
     {
         "id": 1,
@@ -49,34 +49,31 @@ cards = [
     }
 ]
 
-@app.route('/') # type: ignore
-def serve():
-  if(app.static_folder != None):
-    return send_from_directory(app.static_folder,'index.html')
-  
-@app.route("/api/cards", methods=["GET"])
-def get_cards():
-    return jsonify({"cards": cards})
 
-# ✅ GET /api/wallet/<card_id>
-@app.route("/api/wallet/<int:card_id>", methods=["GET"])
-def get_wallet(card_id):
+BASE_DIR = Path(__file__).resolve().parent.parent
+STATIC_DIR = BASE_DIR  / "frontend" / "dist"
+
+# Serve index.html for root
+@app.get("/")
+async def index():
+    return FileResponse(STATIC_DIR / "index.html")
+
+
+@app.get("/api/cards")
+async def get_cards():
+    return {"cards": cards}
+
+@app.get("/api/wallet/{card_id}")
+async def get_wallet(card_id: int):
     card = next((c for c in cards if c["id"] == card_id), None)
     if not card:
-        return jsonify({"error": "Card not found"}), 404
+        raise HTTPException(status_code=404, detail="Card not found")
 
     card_transactions = [t for t in transactions if t["card_id"] == card_id]
+    return {"card": card, "transactions": card_transactions}
 
-    return jsonify({
-        "card": card,  # теперь возвращаем всю карту
-        "transactions": card_transactions
-    })
+# Serve static files with correct MIME types
+app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
 
-  
-@app.route('/<path:path>')   # type: ignore
-def static_proxy(path):
-  if(app.static_folder != None):
-    return send_from_directory(app.static_folder,path)
-  
-if __name__ == '__main__':
-    app.run(port=8000)  
+if __name__ == "__main__":
+    uvicorn.run(app, port=8000)

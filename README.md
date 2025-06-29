@@ -34,3 +34,11 @@ Refer to the documentation for setup instructions and usage examples.
   ```bash
   yarn start
   ```
+
+### Запуск Backend
+
+```bash
+python backend/app.py
+# или
+uvicorn backend.app:app --port 8000
+```
