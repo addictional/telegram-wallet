@@ -1,14 +1,36 @@
 # Telegram Project
 
-This project is designed to interact with the Telegram API, providing features such as messaging, bot integration, and automation. It aims to simplify communication workflows and enhance user experience on the Telegram platform.
+Телеграм-бот для работы с банковскими картами.
 
-## Features
+## Описание проекта
 
-- Seamless Telegram API integration
-- Automated messaging and notifications
-- Customizable bot functionality
-- User-friendly interface
+Данное приложение представляет собой телеграм-бота для работы с банковскими картами. Он интегрируется с Telegram API, обеспечивает автоматическую отправку сообщений и уведомлений, а также предоставляет настраиваемый функционал для пользователей. Интерфейс бота интуитивно понятен и удобен для взаимодействия.
 
 ## Getting Started
 
 Refer to the documentation for setup instructions and usage examples.
+
+## Установка
+
+### Зависимости Backend (Python)
+
+1. Убедитесь, что у вас установлен Python версии 3.8 или выше.
+2. Установите зависимости с помощью pip:
+
+  ```bash
+  pip install -r requirements.txt
+  ```
+
+### Установка Frontend
+
+1. Установите зависимости фронтенда (используя yarn):
+
+  ```bash
+  yarn install
+  ```
+
+2. Запустите сервер разработки фронтенда:
+
+  ```bash
+  yarn start
+  ```
