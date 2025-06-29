@@ -1,9 +1,9 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
-from dotenv import load_dotenv
 import os
 import threading
-import backend.app  # Импортируем Flask-приложение
+import uvicorn
+import app
 
 TOKEN = os.getenv("BOT_TOKEN")
 webapp_url = os.getenv("WEBAPP_URL")
@@ -39,6 +39,9 @@ def run_bot():
     app.run_polling()
     print('running')
 
+def run_server():
+    uvicorn.run(app.app, port=8000)
+
 if __name__ == '__main__':
-    threading.Thread(target=backend.app.app.run, kwargs={'port': 8000}).start()
+    threading.Thread(target=run_server).start()
     run_bot()
