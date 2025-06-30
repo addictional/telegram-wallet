@@ -20,11 +20,8 @@ services:
     environment:
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      BOT_TOKEN: ${BOT_TOKEN}
-      WEBAPP_URL: ${WEBAPP_URL}
+    volumes:
+      - .env:/app/.env
   frontend:
     build:
       context: ./frontend
@@ -36,6 +33,7 @@ services:
       WEBAPP_URL: ${WEBAPP_URL}
     volumes:
       - ./frontend/src:/app/src
+      - .env:/app/.env
 
   db:
     image: postgres:latest

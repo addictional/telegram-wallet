@@ -1,13 +1,18 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
-# from dotenv import load_dotenv
+from dotenv import load_dotenv
+from pathlib import Path
 import os
 # import threading
 import uvicorn
 # import app.main as app
-# load_dotenv()
+env_path = Path(__file__).parent.parent / ".env"
+load_dotenv(dotenv_path=env_path)
+
 TOKEN = os.getenv("BOT_TOKEN")
 webapp_url = os.getenv("WEBAPP_URL")
+
+print(webapp_url,flush=True)
 
 async def web_app(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print('start',flush=True)

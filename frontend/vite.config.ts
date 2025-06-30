@@ -20,6 +20,6 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     port: 5173,
-    // allowedHosts: [process.env.WEBAPP_URL as string],
+    allowedHosts: [process.env.WEBAPP_URL as string],
   },
 });
