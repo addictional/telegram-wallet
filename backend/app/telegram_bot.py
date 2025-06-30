@@ -1,14 +1,16 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
+# from dotenv import load_dotenv
 import os
-import threading
+# import threading
 import uvicorn
-import app
-
+# import app.main as app
+# load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
 webapp_url = os.getenv("WEBAPP_URL")
 
 async def web_app(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print('start',flush=True)
     if not webapp_url:
        raise EnvironmentError("WEBAPP_URL required")
     keyboard = InlineKeyboardMarkup([
@@ -37,11 +39,6 @@ def run_bot():
     app.add_handler(CommandHandler('balance',balance))
     app.add_handler(MessageHandler(filters.TEXT & filters.ChatType.PRIVATE, handle_webapp_data))
     app.run_polling()
-    print('running')
-
-def run_server():
-    uvicorn.run(app.app, port=8000)
 
 if __name__ == '__main__':
-    threading.Thread(target=run_server).start()
     run_bot()
