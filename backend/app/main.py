@@ -1,10 +1,102 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from datetime import datetime, timedelta
 from pathlib import Path
+import json
+import os
+from typing import Optional
+
+from fastapi import (
+    FastAPI,
+    HTTPException,
+    status,
+    Depends,
+    Body,
+)
+from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError, jwt
+from sqlalchemy.orm import Session
 import uvicorn
 
+from urllib.parse import parse_qsl
+import hashlib
+import hmac
+
+from .database import SessionLocal, engine
+from .models import Base, User
+
 app = FastAPI()
+
+SECRET_KEY = "CHANGE_ME"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
+
+BOT_TOKEN = os.getenv("BOT_TOKEN", "")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
+
+revoked_tokens: set[str] = set()
+
+Base.metadata.create_all(bind=engine)
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+def verify_init_data(init_data: str) -> Optional[dict]:
+    if not BOT_TOKEN:
+        return None
+    parsed = dict(parse_qsl(init_data, strict_parsing=True))
+    hash_value = parsed.pop("hash", None)
+    if not hash_value:
+        return None
+    data_check_string = "\n".join(f"{k}={v}" for k, v in sorted(parsed.items()))
+    secret_key = hashlib.sha256(BOT_TOKEN.encode()).digest()
+    computed_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
+    if computed_hash != hash_value:
+        return None
+    return parsed
+
+
+def get_user_by_id(db: Session, user_id: int) -> Optional[User]:
+    return db.query(User).filter(User.id == user_id).first()
+
+
+def get_user_by_tg(db: Session, telegram_id: int) -> Optional[User]:
+    return db.query(User).filter(User.telegram_id == telegram_id).first()
+
+
+def create_access_token(data: dict, expires_delta: timedelta) -> str:
+    to_encode = data.copy()
+    expire = datetime.utcnow() + expires_delta
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def get_current_user(
+    token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
+) -> User:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    if token in revoked_tokens:
+        raise credentials_exception
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    user = get_user_by_id(db, int(user_id))
+    if user is None:
+        raise credentials_exception
+    return user
+
 
 
 
@@ -61,12 +153,45 @@ STATIC_DIR = BASE_DIR  / "frontend" / "dist"
 #     return FileResponse(STATIC_DIR / "index.html")
 
 
+@app.post("/api/login")
+async def login(
+    init_data: str = Body(..., embed=True),
+    db: Session = Depends(get_db),
+):
+    data_raw = init_data
+    if not data_raw:
+        raise HTTPException(status_code=400, detail="init_data required")
+    parsed = verify_init_data(data_raw)
+    if not parsed or "user" not in parsed:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid init data")
+    user_info = json.loads(parsed["user"])
+    tg_id = int(user_info["id"])
+    username = user_info.get("username")
+    user = get_user_by_tg(db, tg_id)
+    if not user:
+        user = User(telegram_id=tg_id, username=username)
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": str(user.id)}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+@app.post("/api/logout")
+async def logout(token: str = Depends(oauth2_scheme)):
+    revoked_tokens.add(token)
+    return {"detail": "Logged out"}
+
+
 @app.get("/api/cards")
-async def get_cards():
+async def get_cards(current_user: User = Depends(get_current_user)):
     return {"cards": cards}
 
 @app.get("/api/wallet/{card_id}")
-async def get_wallet(card_id: int):
+async def get_wallet(card_id: int, current_user: User = Depends(get_current_user)):
     card = next((c for c in cards if c["id"] == card_id), None)
     if not card:
         raise HTTPException(status_code=404, detail="Card not found")
