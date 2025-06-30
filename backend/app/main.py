@@ -3,8 +3,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
 import uvicorn
+import mimetypes
 
 app = FastAPI()
+
+
 
 # Transaction data linked to cards by card_id
 transactions = [
@@ -50,13 +53,13 @@ cards = [
 ]
 
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 STATIC_DIR = BASE_DIR  / "frontend" / "dist"
 
 # Serve index.html for root
-@app.get("/")
-async def index():
-    return FileResponse(STATIC_DIR / "index.html")
+# @app.get("/")
+# async def index():
+#     return FileResponse(STATIC_DIR / "index.html")
 
 
 @app.get("/api/cards")
@@ -72,8 +75,12 @@ async def get_wallet(card_id: int):
     card_transactions = [t for t in transactions if t["card_id"] == card_id]
     return {"card": card, "transactions": card_transactions}
 
-# Serve static files with correct MIME types
-app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
 
+# Serve static files with correct MIME types
+# app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
+
+# === Main entrypoint ===
 if __name__ == "__main__":
+
+    # Запускаем FastAPI
     uvicorn.run(app, port=8000)

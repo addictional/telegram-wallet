@@ -42,3 +42,14 @@ python backend/app.py
 # или
 uvicorn backend.app:app --port 8000
 ```
+
+### Использование Docker Compose
+
+Для запуска проекта с помощью Docker выполните:
+
+```bash
+docker-compose up --build
+```
+
+Фронтенд будет доступен на [http://localhost:3000](http://localhost:3000), а бекенд на [http://localhost:8000](http://localhost:8000).
+
