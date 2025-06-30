@@ -53,3 +53,7 @@ docker-compose up --build
 
 Фронтенд будет доступен на [http://localhost:3000](http://localhost:3000), а бекенд на [http://localhost:8000](http://localhost:8000).
 
+### Аутентификация WebApp
+
+Для подтверждения подлинности данных, полученных из Telegram WebApp, реализован эндпоинт `/api/auth/webapp`. Он принимает поле `initData` и возвращает информацию о пользователе после проверки подписи.
+
