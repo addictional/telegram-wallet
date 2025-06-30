@@ -3,7 +3,6 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
 import uvicorn
-import mimetypes
 
 app = FastAPI()
 
