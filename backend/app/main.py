@@ -21,7 +21,7 @@ import hashlib
 import hmac
 
 from .database import SessionLocal, engine
-from .models import Base, User
+from .models import Base, User, Card, Transaction
 
 app = FastAPI()
 
@@ -69,6 +69,31 @@ def get_user_by_tg(db: Session, telegram_id: int) -> Optional[User]:
     return db.query(User).filter(User.telegram_id == telegram_id).first()
 
 
+def create_card(
+    db: Session,
+    user: User,
+    brand: str,
+    number: str,
+    ccv: str,
+    balance: int = 0,
+    currency: str = "USD",
+) -> Card:
+    last4 = number.replace(" ", "")[-4:]
+    card = Card(
+        user_id=user.id,
+        brand=brand,
+        number=number,
+        last4=last4,
+        ccv=ccv,
+        balance=balance,
+        currency=currency,
+    )
+    db.add(card)
+    db.commit()
+    db.refresh(card)
+    return card
+
+
 def create_access_token(data: dict, expires_delta: timedelta) -> str:
     to_encode = data.copy()
     expire = datetime.utcnow() + expires_delta
@@ -101,48 +126,6 @@ def get_current_user(
 
 
 
-# Transaction data linked to cards by card_id
-transactions = [
-    {"id": 1, "card_id": 1, "icon": "⬇️", "title": "Funding", "color": "text-green-600",
-     "subtitle": "Bank Transfer", "amount": 90000, "currency": 'RUB'},
-    {"id": 2, "card_id": 1, "icon": "🎮", "title": "Steam", "color": "text-red-500",
-     "subtitle": "Payment", "amount": -50, "currency": 'USD'},
-    {"id": 3, "card_id": 1, "icon": "🎁", "title": "Gift received", "color": "text-green-600",
-     "subtitle": "From Dad", "amount": 30000, "currency": "RUB"},
-    {"id": 4, "card_id": 2, "icon": "📦", "title": "AliExpress", "color": "text-red-500",
-     "subtitle": "Order #456", "amount": -130, "currency": "USD"},
-]
-
-# Example cards list
-cards = [
-    {
-        "id": 1,
-        "brand": "Visa",
-        "last4": "1234",
-        "balance": 1200,
-        "currency": "USD",
-        "number": "4111 1111 1111 1234",
-        "ccv": "123"
-    },
-    {
-        "id": 2,
-        "brand": "MasterCard",
-        "last4": "5678",
-        "balance": 1500,
-        "currency": "USD",
-        "number": "5500 0000 0000 5678",
-        "ccv": "456"
-    },
-    {
-        "id": 3,
-        "brand": "Visa",
-        "last4": "9012",
-        "balance": 900,
-        "currency": "USD",
-        "number": "4111 1111 1111 9012",
-        "ccv": "789"
-    }
-]
 
 
 # Serve index.html for root
@@ -187,17 +170,67 @@ async def logout(token: str = Depends(oauth2_scheme)):
 
 
 @app.get("/api/cards")
-async def get_cards(current_user: User = Depends(get_current_user)):
-    return {"cards": cards}
+async def get_cards(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    user_cards = (
+        db.query(Card).filter(Card.user_id == current_user.id).all()
+    )
+    cards_response = [
+        {
+            "id": c.id,
+            "brand": c.brand,
+            "last4": c.last4,
+            "balance": c.balance,
+            "currency": c.currency,
+            "number": c.number,
+            "ccv": c.ccv,
+        }
+        for c in user_cards
+    ]
+    return {"cards": cards_response}
 
 @app.get("/api/wallet/{card_id}")
-async def get_wallet(card_id: int, current_user: User = Depends(get_current_user)):
-    card = next((c for c in cards if c["id"] == card_id), None)
+async def get_wallet(
+    card_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    card = (
+        db.query(Card)
+        .filter(Card.id == card_id, Card.user_id == current_user.id)
+        .first()
+    )
     if not card:
         raise HTTPException(status_code=404, detail="Card not found")
 
-    card_transactions = [t for t in transactions if t["card_id"] == card_id]
-    return {"card": card, "transactions": card_transactions}
+    card_data = {
+        "id": card.id,
+        "brand": card.brand,
+        "last4": card.last4,
+        "balance": card.balance,
+        "currency": card.currency,
+        "number": card.number,
+        "ccv": card.ccv,
+    }
+    card_transactions = (
+        db.query(Transaction).filter(Transaction.card_id == card.id).all()
+    )
+    tx_data = [
+        {
+            "id": tx.id,
+            "card_id": tx.card_id,
+            "icon": tx.icon,
+            "title": tx.title,
+            "subtitle": tx.subtitle,
+            "color": tx.color,
+            "amount": tx.amount,
+            "currency": tx.currency,
+        }
+        for tx in card_transactions
+    ]
+    return {"card": card_data, "transactions": tx_data}
 
 
 # Serve static files with correct MIME types
