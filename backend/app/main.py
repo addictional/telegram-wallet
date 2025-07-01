@@ -78,12 +78,10 @@ def create_card(
     balance: int = 0,
     currency: str = "USD",
 ) -> Card:
-    last4 = number.replace(" ", "")[-4:]
     card = Card(
         user_id=user.id,
         brand=brand,
         number=number,
-        last4=last4,
         ccv=ccv,
         balance=balance,
         currency=currency,
@@ -174,18 +172,14 @@ async def get_cards(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    user_cards = (
-        db.query(Card).filter(Card.user_id == current_user.id).all()
-    )
+    user_cards = db.query(Card).filter(Card.user_id == current_user.id).all()
     cards_response = [
         {
             "id": c.id,
             "brand": c.brand,
-            "last4": c.last4,
+            "last4": c.number.replace(" ", "")[-4:],
             "balance": c.balance,
             "currency": c.currency,
-            "number": c.number,
-            "ccv": c.ccv,
         }
         for c in user_cards
     ]
@@ -208,7 +202,7 @@ async def get_wallet(
     card_data = {
         "id": card.id,
         "brand": card.brand,
-        "last4": card.last4,
+        "last4": card.number.replace(" ", "")[-4:],
         "balance": card.balance,
         "currency": card.currency,
         "number": card.number,
