@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 
 ls
@@ -10,4 +10,4 @@ echo "Starting FastAPI app..."
 uvicorn app.main:app --host 0.0.0.0 --port 8000 &
 
 echo "Starting Telegram bot..."
-python app/telegram_bot.py
+python -m app.telegram_bot
