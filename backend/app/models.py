@@ -19,7 +19,6 @@ class Card(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     brand = Column(String, nullable=False)
-    last4 = Column(String, nullable=False)
     balance = Column(Integer, default=0)
     currency = Column(String, nullable=False)
     number = Column(String, nullable=False)
