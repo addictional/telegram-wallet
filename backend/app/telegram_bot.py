@@ -3,9 +3,9 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, Con
 import os
 import asyncio
 
-from .database import SessionLocal
-from .main import get_user_by_tg, create_card
-from .models import User
+from .core.database import SessionLocal
+from .crud import get_user_by_tg, create_card
+from .core.models import User
 
 TOKEN = os.getenv("BOT_TOKEN")
 webapp_url = os.getenv("WEBAPP_URL")
