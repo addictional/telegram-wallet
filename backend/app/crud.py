@@ -1,6 +1,6 @@
 from typing import Optional
 from sqlalchemy.orm import Session
-from .core.models import User, Card, Transaction
+from app.core.models import User, Card, Transaction
 
 
 def get_user_by_id(db: Session, user_id: int) -> Optional[User]:
