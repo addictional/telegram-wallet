@@ -20,9 +20,9 @@ from urllib.parse import parse_qsl
 import hashlib
 import hmac
 
-from .core.database import SessionLocal, engine
-from .core.models import Base, User, Card, Transaction
-from .crud import get_user_by_id, get_user_by_tg, create_card
+from app.core.database import SessionLocal, engine
+from app.core.models import Base, User, Card, Transaction
+from app.crud import get_user_by_id, get_user_by_tg, create_card
 
 app = FastAPI()
 

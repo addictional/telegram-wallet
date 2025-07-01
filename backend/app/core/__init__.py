@@ -1,2 +1,2 @@
-from .database import Base, SessionLocal, engine
+from app.core.database import Base, SessionLocal, engine
 
