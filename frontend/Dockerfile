@@ -1,19 +1,10 @@
-FROM node:20
+FROM node:latest
 
-# Устанавливаем рабочую директорию
 WORKDIR /app
 
-# Копируем зависимости
 COPY package.json yarn.lock ./
+RUN yarn install
 
-# Включаем corepack и устанавливаем зависимости
-RUN corepack enable && yarn install
-
-# Копируем исходный код
 COPY . .
 
-# Пробрасываем порт Vite
-EXPOSE 5173
-
-# Запускаем Vite dev-сервер
-CMD ["yarn", "dev"]
+CMD ["yarn", "dev", "--host"]
