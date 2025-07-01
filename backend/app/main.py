@@ -20,8 +20,9 @@ from urllib.parse import parse_qsl
 import hashlib
 import hmac
 
-from .database import SessionLocal, engine
-from .models import Base, User, Card, Transaction
+from .core.database import SessionLocal, engine
+from .core.models import Base, User, Card, Transaction
+from .crud import get_user_by_id, get_user_by_tg, create_card
 
 app = FastAPI()
 
@@ -61,35 +62,6 @@ def verify_init_data(init_data: str) -> Optional[dict]:
     return parsed
 
 
-def get_user_by_id(db: Session, user_id: int) -> Optional[User]:
-    return db.query(User).filter(User.id == user_id).first()
-
-
-def get_user_by_tg(db: Session, telegram_id: int) -> Optional[User]:
-    return db.query(User).filter(User.telegram_id == telegram_id).first()
-
-
-def create_card(
-    db: Session,
-    user: User,
-    brand: str,
-    number: str,
-    ccv: str,
-    balance: int = 0,
-    currency: str = "USD",
-) -> Card:
-    card = Card(
-        user_id=user.id,
-        brand=brand,
-        number=number,
-        ccv=ccv,
-        balance=balance,
-        currency=currency,
-    )
-    db.add(card)
-    db.commit()
-    db.refresh(card)
-    return card
 
 
 def create_access_token(data: dict, expires_delta: timedelta) -> str:
