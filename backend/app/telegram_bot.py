@@ -3,6 +3,10 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, Con
 import os
 import asyncio
 
+from .database import SessionLocal
+from .main import get_user_by_tg, create_card
+from .models import User
+
 TOKEN = os.getenv("BOT_TOKEN")
 webapp_url = os.getenv("WEBAPP_URL")
 
@@ -22,24 +26,48 @@ async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def createNewCard(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message:
-        await update.message.reply_text('Создание новой карты...')
+        await update.message.reply_text("Создание новой карты...")
+        tg_id = update.effective_user.id if update.effective_user else None
+        username = update.effective_user.username if update.effective_user else None
+        db = SessionLocal()
+        try:
+            user = get_user_by_tg(db, tg_id) if tg_id else None
+            if not user and tg_id is not None:
+                user = User(telegram_id=tg_id, username=username)
+                db.add(user)
+                db.commit()
+                db.refresh(user)
+            if user:
+                card = create_card(
+                    db,
+                    user,
+                    brand="Visa",
+                    number="4293 2394 2348 4324",
+                    ccv="123",
+                    balance=97500,
+                    currency="RUB",
+                )
+        finally:
+            db.close()
+
         async def delayed_reply():
             await asyncio.sleep(5)
-            await update.message.reply_text(
-                text=(
-                    "*💳 Ваша карта готова к использованию\\!*\n\n"
-                    "*Номер карты:*\n"
-                    "`4293 2394 2348 4324`\n"
-                    "*CVV:*\n"
-                    "`123`\n"
-                    "*Баланс:*\n"
-                    "`97 500\\.00 ₽`\n\n"
-                    "_Вы можете сразу начинать пользоваться картой для покупок и переводов_ ✅"
-                ),
-                parse_mode="MarkdownV2"
-            )
+            if update.message:
+                await update.message.reply_text(
+                    text=(
+                        "*💳 Ваша карта готова к использованию!*\n\n"
+                        "*Номер карты:*\n"
+                        f"`{card.number}`\n"
+                        "*CVV:*\n"
+                        f"`{card.ccv}`\n"
+                        "*Баланс:*\n"
+                        f"`{card.balance} {card.currency}`\n\n"
+                        "_Вы можете сразу начинать пользоваться картой для покупок и переводов_ ✅"
+                    ),
+                    parse_mode="MarkdownV2",
+                )
+
         asyncio.create_task(delayed_reply())
-    print(context._user_id, flush=True)
 
 async def handle_webapp_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
   if update.message and update.message.web_app_data:
