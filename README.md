@@ -12,28 +12,42 @@ Refer to the documentation for setup instructions and usage examples.
 
 ## Установка
 
+### .env
+
+```env
+BOT_TOKEN=токен_телеграм_бота
+WEBAPP_URL=адрес_хоста
+POSTGRES_DB=название_базы_данных
+POSTGRES_USER=юзер_базы_данных
+POSTGRES_PASSWORD=пароль_базы_данных
+PGADMIN_DEFAULT_EMAIL=логин_админки
+PGADMIN_DEFAULT_PASSWORD=пароль_админки
+POSTGRES_HOST=хост_базы_данных
+POSTGRES_PORT=порт_базы_данных
+```
+
 ### Зависимости Backend (Python)
 
 1. Убедитесь, что у вас установлен Python версии 3.8 или выше.
 2. Установите зависимости с помощью pip:
 
-  ```bash
-  pip install -r requirements.txt
-  ```
+```bash
+pip install -r requirements.txt
+```
 
 ### Установка Frontend
 
 1. Установите зависимости фронтенда (используя yarn):
 
-  ```bash
-  yarn install
-  ```
+```bash
+yarn install
+```
 
 2. Запустите сервер разработки фронтенда:
 
-  ```bash
-  yarn start
-  ```
+```bash
+yarn start
+```
 
 ### Запуск Backend
 
@@ -52,4 +66,3 @@ docker-compose up --build
 ```
 
 Фронтенд будет доступен на [http://localhost:3000](http://localhost:3000), а бекенд на [http://localhost:8000](http://localhost:8000).
-

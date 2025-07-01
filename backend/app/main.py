@@ -50,12 +50,13 @@ def verify_init_data(init_data: str) -> Optional[dict]:
         return None
     parsed = dict(parse_qsl(init_data, strict_parsing=True))
     hash_value = parsed.pop("hash", None)
-    if not hash_value:
-        return None
     data_check_string = "\n".join(f"{k}={v}" for k, v in sorted(parsed.items()))
-    secret_key = hashlib.sha256(BOT_TOKEN.encode()).digest()
-    computed_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
-    if computed_hash != hash_value:
+
+    secret_key = hmac.new("WebAppData".encode(), BOT_TOKEN.encode(), hashlib.sha256).digest()
+    h = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256)
+    if(h.hexdigest() != hash_value):
+        print(f"not equal", flush=True)
+        print(f"not equal!! - Computed hash: {h.hexdigest()}, Expected hash: {hash_value}", flush=True)
         return None
     return parsed
 
@@ -144,9 +145,6 @@ cards = [
 ]
 
 
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-STATIC_DIR = BASE_DIR  / "frontend" / "dist"
-
 # Serve index.html for root
 # @app.get("/")
 # async def index():
@@ -159,9 +157,11 @@ async def login(
     db: Session = Depends(get_db),
 ):
     data_raw = init_data
+    print(f"Received init_data: {data_raw}", flush=True)
     if not data_raw:
         raise HTTPException(status_code=400, detail="init_data required")
     parsed = verify_init_data(data_raw)
+    print(f"Parsed init_data 1: {parsed}", flush=True)
     if not parsed or "user" not in parsed:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid init data")
     user_info = json.loads(parsed["user"])
