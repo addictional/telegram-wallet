@@ -2,7 +2,7 @@ from logging.config import fileConfig
 import os
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
-from app.models import Base  # Импортируйте вашу базу моделей
+from app.core.models import Base  # Импортируйте вашу базу моделей
 from alembic import context
 
 
